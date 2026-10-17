@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package registry;
+
+option go_package = "./registry";
+
+// Represents a capability (tool) an agent provides.
+message ToolDefinition {
+  string name = 1;         // Unique name of the tool (e.g., "CalculateSum", "FetchWeatherData")
+  string description = 2;  // Human-readable description of what the tool does
+  map<string, ToolParameter> parameters = 3; // Input parameters for the tool
+  ToolParameter return_value = 4; // Expected return value type
+}
+
+// Represents a single parameter or return value for a tool.
+message ToolParameter {
+  enum ParameterType {
+    UNKNOWN = 0;
+    STRING = 1;
+    INT = 2;
+    FLOAT = 3;
+    BOOL = 4;
+    JSON = 5; // For complex structured data
+  }
+  ParameterType type = 1;
+  bool required = 2;
+  string description = 3;
+}
+
+// Represents an invocation request for a tool.
+message ToolInvocationRequest {
+  string tool_name = 1;
+  map<string, string> arguments = 2; // Arguments as key-value pairs (stringified)
+}
+
+// Represents the response from a tool invocation.
+message ToolInvocationResponse {
+  bool success = 1;
+  string result = 2; // Result as a string (can be JSON for complex data)
+  string error = 3;  // Error message if invocation failed
+}
+
+// The ToolRegistry service allows agents to register their tools
+// and other agents to discover and invoke them.
+service ToolRegistry {
+  // Registers a tool with the registry.
+  rpc RegisterTool(ToolDefinition) returns (RegisterToolResponse);
+
+  // Discovers available tools.
+  rpc ListTools(ListToolsRequest) returns (ListToolsResponse);
+
+  // Invokes a registered tool by its name.
+  rpc InvokeTool(ToolInvocationRequest) returns (ToolInvocationResponse);
+}
+
+message RegisterToolResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ListToolsRequest {
+  string agent_id = 1; // Optional: Filter by agent ID
+}
+
+message ListToolsResponse {
+  repeated ToolDefinition tools = 1;
+}
